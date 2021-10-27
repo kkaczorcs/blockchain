@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
+import { BlockchainModule } from './blockchain/blockchain.module';
 
 @Module({
-    imports: [],
-    controllers: [],
-    providers: [],
+  imports: [BlockchainModule],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
