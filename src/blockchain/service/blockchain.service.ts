@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { BlockType } from '../type/block.type';
 
@@ -39,10 +39,14 @@ export class BlockchainService {
       validTransactions.push(transaction);
     }
 
+    if (validTransactions.length === 0) {
+      return null;
+    }
+
     const blockHash = this.generateBlockHash(validTransactions);
 
     if (!this.checkValidity(blockHash)) {
-      throw new BadRequestException('Check validity error');
+      return undefined;
     }
 
     this.blocks.push(blockHash);
@@ -105,6 +109,16 @@ export class BlockchainService {
       return true;
     }
 
-    return block.previousHash === previousHash;
+    if (block.previousHash !== previousHash) {
+      return false;
+    }
+
+    for (let i = this.blocks.length - 1; i > 0; i--) {
+      if (this.blocks[i].previousHash !== this.blocks[i - 1].hash) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }

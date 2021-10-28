@@ -1,8 +1,17 @@
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Body, Controller, Post, Get, Param } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Get,
+  Param,
+  BadRequestException,
+} from '@nestjs/common';
 import { BlockchainService } from '../service/blockchain.service';
 import { BlockchainDTO } from '../dto/blockchain.dto';
 import { BlockchainType } from '../type/blockchain.type';
+import { ValidationPipe } from '../../common/validation/validation.pipe';
+import { initializeBlockchainSchema } from '../validation/initialize-blockchain.schema';
 
 @ApiTags('blockchain')
 @Controller('blockchain')
@@ -12,7 +21,9 @@ export class BlockchainController {
   @ApiOperation({ summary: 'initializes new blockchain operations' })
   @ApiResponse({ status: 201 })
   @Post('')
-  async init(@Body() data: BlockchainDTO): Promise<BlockchainType> {
+  async init(
+    @Body(new ValidationPipe(initializeBlockchainSchema)) data: BlockchainDTO,
+  ): Promise<BlockchainType> {
     this.blockchainService.initAccountBalances(data.initialAccountBalances);
 
     const groupedTransactions = this.blockchainService.groupTransactions(
@@ -21,7 +32,11 @@ export class BlockchainController {
     );
 
     for (const transactions of groupedTransactions) {
-      this.blockchainService.processTransactions(transactions);
+      if (
+        this.blockchainService.processTransactions(transactions) === undefined
+      ) {
+        throw new BadRequestException('blockchain validity error');
+      }
     }
 
     return { blockchain: this.blockchainService.getBlockchain() };
